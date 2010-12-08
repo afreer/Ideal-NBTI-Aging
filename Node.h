@@ -33,7 +33,12 @@ class Node
 public:
 	Node(void);
 	~Node(void);
+
+	// Function to print node info
 	void toString();
+
+	// Function to find transitive fan-in inputs
+	list<Node*> trans_fanin();
 
 	// Net ID and type
 	int ID;
@@ -48,14 +53,16 @@ public:
 	double W;
 
 	// Delay calculations
-	//  Delay at output of this gate
+	//  --> Delay at output of this gate
 	double delay_so_far;
-	//  Threshold at output of this gate
+	//  --> Threshold at output of this gate
 	double threshold;
-	//  Delay of this gate
+	//  --> Delay of this gate
 	double delay;
-	//  True if this gate is a critical gate
+	//  --> True if this gate is a critical gate
 	bool is_critical;
+	//  --> True if this is transitive fan-in of critical gate
+	bool is_transitive;
 
 	// Leakage calculations
 	double leakage;

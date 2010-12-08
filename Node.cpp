@@ -12,6 +12,7 @@ Node::Node(void)
 	delay_so_far = 0;
 	delay = 0;
 	is_critical = false;
+	is_transitive = false;
 	threshold = numeric_limits<double>::infinity();
 }
 

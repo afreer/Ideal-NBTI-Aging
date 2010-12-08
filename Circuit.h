@@ -8,8 +8,16 @@ class Circuit
 public:
 	Circuit(void);
 	~Circuit(void);
+
+	// Parser for benchmark netlist file
 	void parse(char *file);
+
+	// Circuit analysis function
 	void analyze();
+
+	// Find input nodes that are not part of transitive
+	//  fan-in of any critical gate
+	list<Node*> non_trans_fanin();
 
 	// All inputs
 	list<Node*> net_inputs;
@@ -19,8 +27,8 @@ public:
 
 	// All gates (not inputs/outputs)
 	// BELIEF: assume net_gates is in order evaluatable.
-	//  e.g. net_gates[i]'s inputs come before net_gate[i].
-	//  This is currently enforced by the parser.
+	//  --> e.g. net_gates[i]'s inputs come before net_gate[i].
+	//  --> This is currently enforced by the parser.
 	list<Node*> net_gates;
 
 	// Calculation optimizations

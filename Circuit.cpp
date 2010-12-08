@@ -137,8 +137,8 @@ void Circuit::parse(char *file) {
 		}
 	}
 
-	// Netlist inputs, outputs, and gates are set -- 
-	//  no longer need file stream or Node map
+	// Netlist inputs, outputs, and gates are set
+	//  --> no longer need file stream or Node map
 	inf.close();
 }
 
@@ -207,4 +207,29 @@ void Circuit::analyze() {
 		if ((*i)->delay_so_far >= (*i)->threshold)
 			(*i)->is_critical = true;
 	}
+}
+
+list<Node*> Circuit::non_trans_fanin() {
+	// Iterate in reverse through gate nodes to mark transitive inputs
+	for (list<Node*>::reverse_iterator i = net_gates.rbegin(); i != net_gates.rend(); i++) {
+		// If gate is critical or transitive:
+		//	--> iterate through its inputs & mark them as transitive
+		if ((*i)->is_critical || (*i)->is_transitive) {
+			for (list<Node*>::iterator j = (*i)->inputs.begin(); j != (*i)->inputs.end(); j++) {
+				(*j)->is_transitive = true;
+			}
+		}
+	}
+
+	// List of non-transitive gates
+	list<Node*> non_trans_gates;
+
+	// Iterate through input gates and add non-transitive ones to list
+	for (list<Node*>::iterator x = net_inputs.begin(); x != net_inputs.end(); x++) {
+		if (!(*x)->is_transitive) {
+			non_trans_gates.push_back(*x);
+		}
+	}
+
+	return non_trans_gates;
 }
