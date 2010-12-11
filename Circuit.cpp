@@ -10,17 +10,17 @@ using namespace std;
 Circuit::Circuit(void)
 {
 	global_T = 373; // 100 C = 373 K
-	global_k_tp = 1; // TODO: Random Number
-	global_k_fit = 1.406; // fig 3
-	global_L = 90e-9; // 90 nm technology reference???
-	global_n = 1.410; // fig 3
-	global_u = 1; // TODO: Random number
-	global_y = 0.2; // TODO: Saro's code used this ratio I believe
+	global_k_tp = 1; // Arbitrary/Relative Value
+	global_k_fit = 1.406; // fig 3 of Markovic reference
+	global_L = 65e-9; // 65 nm technology -- used in Markovic reference
+	global_n = 1.410; // fig 3 of Markovic reference
+	global_u = 0.08; // average of mobility of holes & electrons for 300 K
+	global_y = 0.2; // TODO: Saro's code used this ratio --> 0.2 is body factor
 	global_W = 1; // TODO: W calculations are relative
-	global_Cox = 1; // TODO: Random number
-	global_I_S = 0.998e-6; // fig 3
-	global_V_T0 = 0.519; // fig 3 (HVT)
-	global_dibl = 0.105; // fig 3
+	global_Cox = 1730e-6; // eox/tox where tox = 20nm
+	global_I_S = 0.998e-6; // fig 3 of Markovic reference
+	global_V_T0 = 0.519; // fig 3 (HVT) of Markovic reference
+	global_dibl = 0.105; // fig 3 of Markovic reference
 
 	global_phi = calcPhi(global_T);
 	global_I_S_noW = global_I_S/global_W;
@@ -32,7 +32,10 @@ Circuit::~Circuit(void)
 {
 }
 
-void Circuit::parse(char *file) {
+void Circuit::parse(char *file, double delay_thresh_in) {
+	// Set delay threshold for circuit
+	delay_threshold = delay_thresh_in;
+	
 	// Net ID -> Node map
 	map<int,Node*> node_map;
 
@@ -186,10 +189,9 @@ void Circuit::analyze() {
 	}
 
 	// Set threshold for all the outputs
-	double threshold_delay = 5; // TODO: Circuit input
 	for (list<Node*>::iterator i = net_outputs.begin(); i != net_outputs.end(); i++) {
-		(*i)->threshold = threshold_delay;
-		if ((*i)->delay_so_far >= threshold_delay) {
+		(*i)->threshold = delay_threshold;
+		if ((*i)->delay_so_far >= delay_threshold) {
 			(*i)->is_critical = true;
 		}
 	}

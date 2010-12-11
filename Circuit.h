@@ -10,7 +10,7 @@ public:
 	~Circuit(void);
 
 	// Parser for benchmark netlist file
-	void parse(char *file);
+	void parse(char *file, double delay_thresh_in);
 
 	// Circuit analysis function
 	void analyze();
@@ -31,21 +31,24 @@ public:
 	//  --> This is currently enforced by the parser.
 	list<Node*> net_gates;
 
-	// Calculation optimizations
-	double global_T;
-	double global_k_tp;
-	double global_k_fit;
-	double global_L;
-	double global_n;
-	double global_u;
-	double global_y;
-	double global_W;
-	double global_Cox; 
-	double global_I_S;
-	double global_V_T0;
-	double global_dibl;
+	// Delay threshold of circuit
+	double delay_threshold;
 
-	double global_phi;
-	double global_I_S_noW;
-	double global_K_d;
+	// Calculation optimizations
+	double global_T;		// temperature
+	double global_k_tp;		// delay-fitting parameter
+	double global_k_fit;	// model-fitting parameter
+	double global_L;		// length of channel
+	double global_n;		// subthreshold slope
+	double global_u;		// mobility of charge carrier
+	double global_y;		// TODO: Is this the ratio of gate parasitic to input capacitance or is it body factor?
+	double global_W;		// width of channel
+	double global_Cox;		// oxide capacitance
+	double global_I_S;		// current when Vgs = Vt
+	double global_V_T0;		// initial threshold voltage
+	double global_dibl;		// drain induced barrier lowering (sigma character)
+
+	double global_phi;		// thermal voltage (kT/q)
+	double global_I_S_noW;	// calculated term (global_I_S/global_W)
+	double global_K_d;		// calculated term (ktp*kfit*L^2 / 2*n*u*phi)
 };

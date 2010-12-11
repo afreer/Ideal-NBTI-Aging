@@ -11,23 +11,23 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
 	// Check for command-line arguments
-	if (argc != 2) {
+	if (argc != 3) {
 		cout << "Usage: "
 			 << argv[0] << ": "
 			 << "<benchmark_circuit> "
-			 //<< "<threshold_delay> "
+			 << "<delay_threshold> "
 			 //<< "<stdev> "
 			 //<< "<seed>"
 			 << endl;
 		return 1;
 	}
-	//double threshold_delay = atof(argv[2]);		// threshold for finding epsilon-critical paths
+	double delay_threshold = atof(argv[2]);		// threshold for finding epsilon-critical paths
 	//double stdev = atof(argv[4]);				// standard deviation of process variation
 	//srand(atoi(argv[5]));						// random number generator for process variability
 
 	// Parse
 	Circuit circuit;
-	circuit.parse(argv[1]);
+	circuit.parse(argv[1], delay_threshold);
 
 	// Analyze
 	circuit.analyze();
