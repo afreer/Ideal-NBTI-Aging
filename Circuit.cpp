@@ -227,6 +227,19 @@ void Circuit::non_trans_fanin() {
 	}
 
 	// Generate freeze mask
-	freeze_mask = new int[net_inputs
+	freeze_mask = new int[(net_inputs.size()-1)/32];
+	int *mask = freeze_mask;
+	int mask_i = 0;
+	*mask = 0;
+	for (list<Node*>::iterator i = net_inputs.begin(); i != net_inputs.end(); i++) {
+		if ((*i)->is_transitive) 
+			*mask |= 1 << mask_i;
+		mask_i++;
+		if (mask_i > 32) {
+			mask++;
+			*mask = 0;
+			mask_i = 0;
+		}
+	}
 }
 

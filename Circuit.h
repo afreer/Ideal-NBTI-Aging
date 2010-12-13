@@ -18,7 +18,7 @@ public:
 	// Find input nodes that are not part of transitive
 	//  fan-in of any critical gate
 	void non_trans_fanin();
-	int[] freeze_mask;
+	int *freeze_mask;
 
 	// All inputs
 	list<Node*> net_inputs;

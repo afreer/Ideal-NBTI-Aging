@@ -7,6 +7,7 @@
 #include "Node.h" 
 #include "Math.h"
 #include "Circuit.h"
+#include "InputPair.h"
 using namespace std;
 
 int main(int argc, char* argv[]) {
@@ -36,21 +37,23 @@ int main(int argc, char* argv[]) {
 	circuit.non_trans_fanin();
 
 	// Try vectors
+	list<InputPair*> pairs;
 	int maxtries = 10000;
 	int inputs = circuit.net_inputs.size();
 	int inputRands = ((inputs-1)/32)+1;
-	for (int i = 0; i < maxtries; i++) {
+	for (int guess = 0; guess < maxtries; guess++) {
 		// Generate vector inputs
-		int[] input1 = new int[inputRands];
-		int[] input2 = new int[inputRands];
+		int *input1 = new int[inputRands];
+		int *input2 = new int[inputRands];
 		for (int j = 0; j < inputRands; j++) {
 			input1[j] = rand();
 			input2[j] = rand();
 		}
 
 		// Transitive fanin freeze
-		for (int j = 0; j < inputRands; j++) {
-			
+		for (int i = 0; i < inputRands; i++) {
+			input2[i] = (input2[i]&circuit.freeze_mask[i]) |
+				(input1[i]&circuit.freeze_mask[i]);
 		}
 
 		// Apply to inputs
@@ -68,8 +71,11 @@ int main(int argc, char* argv[]) {
 			}
 		}
 
-		// Evaluate and record
-
+		// Record
+		InputPair *pair = new InputPair;
+		pair->input1 = input1;
+		pair->input2 = input2;
+		pairs.push_front(pair);
 	}
 
 	// Convex programming
