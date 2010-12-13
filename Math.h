@@ -18,7 +18,7 @@ calcIC(double dibl, double vdd, double vt, double n, double phi);
 
 // Calculate delay
 double
-calcDelay(double kd, double vdd, double ic, double y1, double w1, double w2);
+markovicDelay(double kd, double vdd, double ic, double y1, double w1, double w2);
 
 // Calculates gate independent IS
 //  Multiply by W to get IS.
@@ -27,4 +27,8 @@ calcIS_noW(double n, double u, double cox, double L, double phi);
 
 // Calculate leakage
 double 
-calcLeakage(double IS_noW, double W, double dibl, double vdd, double vt, double n, double phi);
+markovicLeakageCurrent(double IS_noW, double W, double dibl, double vdd, double vt, double n, double phi);
+
+// Calculate delta V_th
+double 
+wangDeltaV_th(double b, double alpha, double t);

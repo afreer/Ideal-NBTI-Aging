@@ -49,7 +49,7 @@ public:
 	list<Node*> outputs;
 
 	// Gate characteristics
-	//double L;
+	double L;
 	double W;
 
 	// Delay calculations
@@ -65,11 +65,15 @@ public:
 	bool is_transitive;
 
 	// Leakage calculations
-	double leakage;
+	double leakage_energy;
 
 	// Switching calculations (should not need this per gate)
-	double switching;
+	double switching_energy;
 
 	// Visited (implemented as counter...increment and compare)
 	int visited;
+
+	// Inputs
+	bool input1;
+	bool input2;
 };

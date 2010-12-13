@@ -146,10 +146,9 @@ void Circuit::parse(char *file, double delay_thresh_in) {
 }
 
 void Circuit::analyze() {
-	int visited = 0;
-	double critical_delay = 0;
-	double total_leakage = 0;
-	double total_switching = 0;
+	critical_delay = 0;
+	total_leakage = 0;
+	total_switching = 0;
 
 	// Calculate delay, leakage, switching
 	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
@@ -160,13 +159,17 @@ void Circuit::analyze() {
 		}
 
 		// Calculate delay, leakage, switching
-		(*i)->delay = 1; // TODO: Calculate
-		(*i)->leakage = 1; // TODO: Calculate
-		(*i)->switching = 1; // TODO: Calculate
+		(*i)->delay = markovicDelay(global_K_d, V_DD,
+			calcIC(global_dibl, V_DD, global_V_T0,
+			global_n, global_phi), global_y, global_W,
+			global_W);
+		(*i)->leakage_energy = T_clk*V_DD*markovicLeakageCurrent(global_I_S_noW, global_W,
+			global_dibl, V_DD, global_V_T0, global_n, global_phi); 
+		(*i)->switching_energy = 1; // TODO: Calculate
 
 		// Total leakage & switching
-		total_leakage += (*i)->leakage;
-		total_switching += (*i)->switching;
+		total_leakage += (*i)->leakage_energy;
+		total_switching += (*i)->switching_energy;
 	}
 
 	// Iterate
@@ -211,7 +214,7 @@ void Circuit::analyze() {
 	}
 }
 
-list<Node*> Circuit::non_trans_fanin() {
+void Circuit::non_trans_fanin() {
 	// Iterate in reverse through gate nodes to mark transitive inputs
 	for (list<Node*>::reverse_iterator i = net_gates.rbegin(); i != net_gates.rend(); i++) {
 		// If gate is critical or transitive:
@@ -223,15 +226,7 @@ list<Node*> Circuit::non_trans_fanin() {
 		}
 	}
 
-	// List of non-transitive gates
-	list<Node*> non_trans_gates;
-
-	// Iterate through input gates and add non-transitive ones to list
-	for (list<Node*>::iterator x = net_inputs.begin(); x != net_inputs.end(); x++) {
-		if (!(*x)->is_transitive) {
-			non_trans_gates.push_back(*x);
-		}
-	}
-
-	return non_trans_gates;
+	// Generate freeze mask
+	freeze_mask = new int[net_inputs
 }
+
