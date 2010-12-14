@@ -1,6 +1,7 @@
 #include "Circuit.h"
 #include "Node.h"
 #include "Math.h"
+#include "InputPair.h"
 #include <iostream>
 #include <fstream>
 #include <cassert>
@@ -188,7 +189,7 @@ void Circuit::analyze() {
 
 	// Set threshold for all the outputs
 	// --> TODO: Calculate delay_threshold in terms of worst case NBTI 
-	double delay_threshold = critical_delay*0.90; 
+	double delay_threshold = critical_delay; 
 	for (list<Node*>::iterator i = net_outputs.begin(); i != net_outputs.end(); i++) {
 		(*i)->threshold = delay_threshold;
 		if ((*i)->delay_so_far >= delay_threshold) {
@@ -235,6 +236,7 @@ void Circuit::non_trans_fanin() {
 		// If gate is critical or transitive:
 		//	--> iterate through its inputs & mark them as transitive
 		if ((*i)->is_critical || (*i)->is_transitive) {
+			(*i)->is_transitive = true;
 			for (list<Node*>::iterator j = (*i)->inputs.begin(); j != (*i)->inputs.end(); j++) {
 				(*j)->is_transitive = true;
 			}
@@ -304,8 +306,11 @@ void Circuit::print_stats() {
 }
 
 // Apply input pair.  Calculate the new leakage energy.
-//  Return true if critical gates are switched
-bool Circuit::apply_input_pair() {
+//  Return true if critical gates are switched.
+//  Gates are marked as reachable.
+bool Circuit::apply_input_pair(InputPair *pair) {
+	// Propagate through gates
+	apply_input_pair_to_inputs(pair);
 	bool ret = false;
 	leakage_saved_last = 0;
 	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
@@ -313,9 +318,9 @@ bool Circuit::apply_input_pair() {
 		(*i)->calc_output();
 		if ((*i)->output1 != (*i)->output2) {
 			// Switched
-			if ((*i)->is_critical) {
+			if ((*i)->is_critical)
 				ret = true;
-			}
+			(*i)->reachable = true;
 
 			// Calc new leakage energy
 			//double Vth_new = global_V_T0 + wangDeltaV_th(WANG_B, 0.5, NBTI_time);
@@ -329,4 +334,42 @@ bool Circuit::apply_input_pair() {
 		}
 	}
 	return ret;
+}
+
+// Return true if some gates are not covered
+bool Circuit::covered() {
+	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
+		if ((*i)->reachable && !(*i)->covered)
+			return false;
+	}
+	return true;
+}
+
+// Apply input pair to just the inputs
+void Circuit::apply_input_pair_to_inputs(InputPair *pair) {
+	// Apply to inputs
+	int *input1_i = pair->input1;
+	int *input2_i = pair->input2;
+	int input_i = 0;
+	for (list<Node*>::iterator j = net_inputs.begin(); j != net_inputs.end(); j++) {
+		(*j)->output1 = (*input1_i & (1<<input_i)) == 0;
+		(*j)->output2 = (*input2_i & (1<<input_i)) == 0;
+		input_i++;
+		if (input_i >= 32) {
+			input1_i++;
+			input2_i++;
+			input_i = 0;
+		}
+	}
+}
+
+// Mark gates affected by this input pair as covered
+void Circuit::cover(InputPair *pair) {
+	apply_input_pair_to_inputs(pair);
+	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
+		(*i)->calc_output();
+		if ((*i)->output1 != (*i)->output2) {
+			(*i)->covered = true;
+		}
+	}
 }

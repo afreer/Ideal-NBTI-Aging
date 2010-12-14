@@ -1,6 +1,7 @@
 #pragma once
 #include <list>
 #include "Node.h"
+#include "InputPair.h"
 using namespace std;
 
 class Circuit
@@ -13,15 +14,10 @@ public:
 	void print_stats();
 	void non_trans_fanin();
 	void find_ideal_energy();
-	bool apply_input_pair(); 
-
-	// Ideal saved energy
-	double ideal_leakage_saved;
-	double ideal_leakage_saved_trans;
-
-	// Critical gate transitive fanin freeze bit mask
-	int *freeze_mask;
-	int freeze_mask_len;
+	void apply_input_pair_to_inputs(InputPair *pair);
+	bool apply_input_pair(InputPair *pair); 
+	void cover(InputPair *pair);
+	bool covered();
 
 	// Inputs, outputs, gates (not inputs/outputs)
 	// BELIEF: assume net_gates is in order evaluatable.
@@ -35,8 +31,16 @@ public:
 	double leakage_energy;
 	double switching_energy;
 	double critical_delay;
+	int critical_count;
 
-	// Pair application
+	// Critical gate transitive fanin freeze bit mask
+	int *freeze_mask;
+	int freeze_mask_len;
+	int transitive_count;
+
+	// Saved energy
+	double ideal_leakage_saved;
+	double ideal_leakage_saved_trans;
 	double leakage_saved_last;
 
 	//////////////////////////////////////////////////////////////////////

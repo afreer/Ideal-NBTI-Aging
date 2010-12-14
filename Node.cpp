@@ -47,8 +47,9 @@ void Node::print_stats() {
 	cout << "\tDelay: " << delay
 		<< ", Delay_so_far: " << delay_so_far
 		<< ", Threshold: " << threshold
-		<< ", Is_critical " << is_critical;
-	cout << endl;
+		<< ", Is_critical " << is_critical
+		<< ", Is_transitive " << is_transitive
+		<< endl;
 }
 
 void Node::calc_output() {

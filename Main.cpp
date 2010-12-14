@@ -32,8 +32,8 @@ int main(int argc, char* argv[]) {
 	Circuit circuit;
 	circuit.parse(argv[1]);
 	circuit.analyze();
-	circuit.find_ideal_energy();
 	circuit.non_trans_fanin();
+	circuit.find_ideal_energy();
 	circuit.print_stats();
 
 	// Try vectors
@@ -54,27 +54,16 @@ int main(int argc, char* argv[]) {
 				(input1[i]&circuit.freeze_mask[i]);
 		}
 
-		// Apply to inputs
-		int *input1_i = input1;
-		int *input2_i = input2;
-		int input_i = 0;
-		for (list<Node*>::iterator j = circuit.net_inputs.begin(); j != circuit.net_inputs.end(); j++) {
-			(*j)->output1 = (*input1_i & (1<<input_i)) == 0;
-			(*j)->output2 = (*input2_i & (1<<input_i)) == 0;
-			input_i++;
-			if (input_i >= 32) {
-				input1_i++;
-				input2_i++;
-				input_i = 0;
-			}
-		}
-
-		// Find new leakage energy and record
-		if (circuit.apply_input_pair()) 
-			assert(false); // For now, never affect critical
+		// Create InputPair
 		InputPair *pair = new InputPair;
 		pair->input1 = input1;
 		pair->input2 = input2;
+
+		// Find new leakage energy and record
+		if (circuit.apply_input_pair(pair)) 
+			assert(false); // For now, never affect critical
+
+		// Add input pair to list
 		pair->saved_orig = circuit.leakage_saved_last;
 		pair->saved_last = pair->saved_orig;
 		pair->visited = 0;
@@ -84,16 +73,39 @@ int main(int argc, char* argv[]) {
 	// Hamming distance on top vectors
 
 	// Greedy (set cover)
-	//int visited = 0;
-	//list<InputPair*> greedy;
-	//multiset<InputPair*>::iterator i = pairs.begin();
-	//while (i != pairs.end()) {
-	//	InputPair* temp = *i;
-	//	if ((*i)->visited == visited) {
-	//		greedy.push_back(temp);
-	//		i = pairs.erase(i);
-	//	}
-	//}
+	int visited = 0;
+	list<InputPair*> greedy;
+	multiset<InputPair*>::iterator i = pairs.begin();
+	while (!circuit.covered()) {
+		while (i != pairs.end()) {
+			multiset<InputPair*>::iterator temp = i;
+			
+			// Check if we have already visited this input pair
+			if ((*i)->visited == visited) {
+				// Maximum, so add to greedy
+				circuit.cover(*temp);
+				greedy.push_back(*temp);
+				i = pairs.erase(temp);
+			} else {
+				// Recalculate
+				circuit.apply_input_pair(*temp);
+				(*temp)->saved_last = circuit.leakage_saved_last;
+				(*temp)->visited = visited;
+
+				// Check if this is still the maximum
+				i++;
+				i = pairs.erase(temp);
+				if ((*temp)->saved_last >= (*i)->saved_last) {
+					// Still the maximum, so add to greedy
+					circuit.cover(*temp);
+					greedy.push_back(*temp);
+				} else {
+					// Reinsert (sorted)
+					pairs.insert(*temp);
+				}
+			}
+		}
+	}
 	
 	// Linear programming (set cover)
 
