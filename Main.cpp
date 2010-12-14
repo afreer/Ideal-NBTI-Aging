@@ -68,8 +68,8 @@ int main(int argc, char* argv[]) {
 		}
 
 		// Find new leakage energy and record
-		if (!circuit.apply_input_pair()) 
-			continue; // TODO: support critical gate aging
+		if (circuit.apply_input_pair()) 
+			assert(false); // For now, never affect critical
 		InputPair *pair = new InputPair;
 		pair->input1 = input1;
 		pair->input2 = input2;
