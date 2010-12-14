@@ -33,12 +33,8 @@ class Node
 public:
 	Node(void);
 	~Node(void);
-
-	// Function to print node info
-	void toString();
-
-	// Function to find transitive fan-in inputs
-	list<Node*> trans_fanin();
+	void calc_output();
+	void print_stats();
 
 	// Net ID and type
 	int ID;
@@ -74,6 +70,6 @@ public:
 	int visited;
 
 	// Inputs
-	bool input1;
-	bool input2;
+	bool output1;
+	bool output2;
 };

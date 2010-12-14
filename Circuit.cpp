@@ -34,10 +34,8 @@ Circuit::~Circuit(void)
 {
 }
 
-void Circuit::parse(char *file, double delay_thresh_in) {
-	// Set delay threshold for circuit
-	delay_threshold = delay_thresh_in;
-	
+// Parser for benchmark netlist file
+void Circuit::parse(char *file) {	
 	// Net ID -> Node map
 	map<int,Node*> node_map;
 
@@ -147,6 +145,7 @@ void Circuit::parse(char *file, double delay_thresh_in) {
 	inf.close();
 }
 
+// Circuit analysis function
 void Circuit::analyze() {
 	critical_delay = 0;
 	total_leakage = 0;
@@ -165,6 +164,7 @@ void Circuit::analyze() {
 			calcIC(global_dibl, V_DD, global_V_T0,
 			global_n, global_phi), global_y, global_W,
 			global_W);
+		cout << (*i)->delay << endl;
 	}
 
 	// Iterate and allow for delay values to propagate through paths
@@ -187,6 +187,8 @@ void Circuit::analyze() {
 	}
 
 	// Set threshold for all the outputs
+	// --> TODO: Calculate delay_threshold in terms of worst case NBTI 
+	double delay_threshold = critical_delay*0.90; 
 	for (list<Node*>::iterator i = net_outputs.begin(); i != net_outputs.end(); i++) {
 		(*i)->threshold = delay_threshold;
 		if ((*i)->delay_so_far >= delay_threshold) {
@@ -224,6 +226,8 @@ void Circuit::analyze() {
 	}
 }
 
+// Find input nodes that are not part of transitive
+//  fan-in of any critical gate
 void Circuit::non_trans_fanin() {
 	// Iterate in reverse through gate nodes to mark transitive inputs
 	for (list<Node*>::reverse_iterator i = net_gates.rbegin(); i != net_gates.rend(); i++) {
@@ -237,7 +241,8 @@ void Circuit::non_trans_fanin() {
 	}
 
 	// Generate freeze mask
-	freeze_mask = new int[(net_inputs.size()-1)/32];
+	freeze_mask_len = ((int)net_inputs.size()-1)/32;
+	freeze_mask = new int[freeze_mask_len];
 	int *mask = freeze_mask;
 	int mask_i = 0;
 	*mask = 0;
@@ -253,6 +258,10 @@ void Circuit::non_trans_fanin() {
 	}
 }
 
+// Find circuit's leakage energy after ideal aging
+// --> assume all critical gates do not get aged
+// --> assume all non-critical gates get aged
+// --> assume constant Vdd (only change in leakage energy)
 void Circuit::find_ideal_energy() {
 	// Calculate ideal leakage energy based on total leakage energy
 	ideal_leakage_energy = total_leakage;
@@ -272,9 +281,43 @@ void Circuit::find_ideal_energy() {
 				global_dibl, V_DD, Vth_new, global_n, global_phi);
 
 			// Subtract old leakage and add new
-			total_leakage -= (*i)->leakage_energy;
-			total_leakage += leakage_energy_new;
+			ideal_leakage_energy -= (*i)->leakage_energy;
+			ideal_leakage_energy += leakage_energy_new;
 		}	
 	}
 }
 
+// Print critical delay, total leakage, ideal leakage
+void Circuit::printStats() {
+	cout << "Critical delay: " << critical_delay 
+		<< "\nLeakage energy: " << total_leakage
+		<< "\nIdeal leakage energy: " << ideal_leakage_energy
+		<< endl;
+}
+
+// Apply input pair.  Calculate the new leakage energy.
+//  Return true if critical gates are switched
+bool Circuit::apply_input_pair() {
+	bool ret = false;
+	last_leakage_energy = ideal_leakage_energy;
+	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
+		// Calculate node output
+		(*i)->calc_output();
+		if ((*i)->output1 != (*i)->output2) {
+			// Switched
+			if ((*i)->is_critical) {
+				ret = true;
+			}
+
+			// Calc new leakage energy
+			double Vth_new = global_V_T0 + wangDeltaV_th(WANG_B, 0.5, NBTI_time);
+			double leakage_energy_new = T_clk*V_DD*markovicLeakageCurrent(global_I_S_noW, global_W,
+				global_dibl, V_DD, Vth_new, global_n, global_phi);
+
+			// Subtract old leakage and add new
+			last_leakage_energy -= (*i)->leakage_energy;
+			last_leakage_energy += leakage_energy_new;
+		}
+	}
+	return ret;
+}
