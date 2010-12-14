@@ -148,8 +148,8 @@ void Circuit::parse(char *file) {
 // Circuit analysis function
 void Circuit::analyze() {
 	critical_delay = 0;
-	total_leakage = 0;
-	total_switching = 0;
+	leakage_energy = 0;
+	switching_energy = 0;
 
 	// Calculate each gate's delay
 	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
@@ -222,8 +222,8 @@ void Circuit::analyze() {
 		(*i)->switching_energy = 1; // TODO: real circuit
 
 		// Total leakage & switching
-		total_leakage += (*i)->leakage_energy;
-		total_switching += (*i)->switching_energy;
+		leakage_energy += (*i)->leakage_energy;
+		switching_energy += (*i)->switching_energy;
 	}
 }
 
@@ -264,8 +264,9 @@ void Circuit::non_trans_fanin() {
 // --> assume all non-critical gates get aged
 // --> assume constant Vdd (only change in leakage energy)
 void Circuit::find_ideal_energy() {
-	// Calculate ideal leakage energy based on total leakage energy
-	ideal_leakage_energy = total_leakage;
+	// Calculate ideal leakage energy saved
+	ideal_leakage_saved = 0;
+	ideal_leakage_saved_trans = 0;
 
 	// BELIEF: New Vth will always be greater than global Vth and so ideal
 	//         will always be less than circuit's actual leakage energy
@@ -283,8 +284,12 @@ void Circuit::find_ideal_energy() {
 			double leakage_energy_new = 0; // FUTURE: real circuit
 
 			// Subtract old leakage and add new
-			ideal_leakage_energy -= (*i)->leakage_energy;
-			ideal_leakage_energy += leakage_energy_new;
+			ideal_leakage_saved += (*i)->leakage_energy;
+			ideal_leakage_saved -= leakage_energy_new;
+			if (!(*i)->is_transitive) {
+				ideal_leakage_saved_trans += (*i)->leakage_energy;
+				ideal_leakage_saved_trans -= leakage_energy_new;
+			}
 		}	
 	}
 }
@@ -292,8 +297,9 @@ void Circuit::find_ideal_energy() {
 // Print critical delay, total leakage, ideal leakage
 void Circuit::print_stats() {
 	cout << "Critical delay: " << critical_delay 
-		<< "\nLeakage energy: " << total_leakage
-		<< "\nIdeal leakage energy: " << ideal_leakage_energy
+		<< "\nLeakage energy: " << leakage_energy
+		<< "\nIdeal saved leakage energy: " << ideal_leakage_saved
+		<< "\nIdeal saved transitive leakage energy: " << ideal_leakage_saved_trans 
 		<< endl;
 }
 
@@ -301,7 +307,7 @@ void Circuit::print_stats() {
 //  Return true if critical gates are switched
 bool Circuit::apply_input_pair() {
 	bool ret = false;
-	last_leakage_energy = ideal_leakage_energy;
+	leakage_saved_last = 0;
 	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
 		// Calculate node output
 		(*i)->calc_output();
@@ -318,8 +324,8 @@ bool Circuit::apply_input_pair() {
 			double leakage_energy_new = 0; // FUTURE: real circuit
 
 			// Subtract old leakage and add new
-			last_leakage_energy -= (*i)->leakage_energy;
-			last_leakage_energy += leakage_energy_new;
+			leakage_saved_last += (*i)->leakage_energy;
+			leakage_saved_last -= leakage_energy_new;
 		}
 	}
 	return ret;

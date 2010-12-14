@@ -75,8 +75,8 @@ int main(int argc, char* argv[]) {
 		InputPair *pair = new InputPair;
 		pair->input1 = input1;
 		pair->input2 = input2;
-		pair->leakage_energy = circuit.last_leakage_energy;
-		pair->remaining = pair->leakage_energy;
+		pair->saved_orig = circuit.leakage_saved_last;
+		pair->saved_last = pair->saved_orig;
 		pair->visited = 0;
 		pairs.insert(pair);
 	}

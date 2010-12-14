@@ -15,8 +15,9 @@ public:
 	void find_ideal_energy();
 	bool apply_input_pair(); 
 
-	// Total ideal leakage energy
-	double ideal_leakage_energy;
+	// Ideal saved energy
+	double ideal_leakage_saved;
+	double ideal_leakage_saved_trans;
 
 	// Critical gate transitive fanin freeze bit mask
 	int *freeze_mask;
@@ -31,12 +32,16 @@ public:
 	list<Node*> net_gates;
 
 	// Original totals (see analyze())
-	double total_leakage;
-	double total_switching;
+	double leakage_energy;
+	double switching_energy;
 	double critical_delay;
 
-	// Temporary
-	double last_leakage_energy;
+	// Pair application
+	double leakage_saved_last;
+
+	//////////////////////////////////////////////////////////////////////
+	// MODELING (FUTURE)
+	//////////////////////////////////////////////////////////////////////
 
 	// Input parameters
 	double V_DD;
