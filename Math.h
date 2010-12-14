@@ -3,6 +3,7 @@
 // Constants (physics)
 const static double BOLTZMANN_K = 8.617343e-5;
 const static double ELECTRON_CHARGE_Q = 1.602176e-19;
+const static double WANG_B = 3.9e-3;
 
 // Calculate general K_d parameter
 double 

@@ -9,6 +9,8 @@ public:
 	Circuit(void);
 	~Circuit(void);
 
+	// >>> CIRCUIT FUNCTIONS <<<
+
 	// Parser for benchmark netlist file
 	void parse(char *file, double delay_thresh_in);
 
@@ -19,6 +21,16 @@ public:
 	//  fan-in of any critical gate
 	void non_trans_fanin();
 	int *freeze_mask;
+
+	// Find circuit's leakage energy after ideal aging
+	// --> assume all critical gates do not get aged
+	// --> assume all non-critical gates get aged
+	// --> assume constant Vdd (only change in leakage energy)
+	void find_ideal_energy();
+	double ideal_leakage_energy;
+
+
+	// >>> CIRCUIT VARIABLES <<<
 
 	// All inputs
 	list<Node*> net_inputs;
@@ -42,6 +54,9 @@ public:
 	double T_clk;
 	double aging_time;
 	double delay_threshold;
+
+	// Amount of time for aging via NBTI degradation
+	double NBTI_time;
 
 	// Parameters
 	double global_T;		// temperature

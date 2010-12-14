@@ -26,6 +26,8 @@ Circuit::Circuit(void)
 	global_I_S_noW = global_I_S/global_W;
 	global_K_d = calcKd(global_k_tp, global_k_fit, 
 		global_L, global_n, global_u, global_phi);
+
+	NBTI_time = 86400; // --> assume one day for aging
 }
 
 Circuit::~Circuit(void)
@@ -150,7 +152,7 @@ void Circuit::analyze() {
 	total_leakage = 0;
 	total_switching = 0;
 
-	// Calculate delay, leakage, switching
+	// Calculate each gate's delay
 	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
 		// Calculate sum of output width
 		double output_width = 0;
@@ -163,16 +165,9 @@ void Circuit::analyze() {
 			calcIC(global_dibl, V_DD, global_V_T0,
 			global_n, global_phi), global_y, global_W,
 			global_W);
-		(*i)->leakage_energy = T_clk*V_DD*markovicLeakageCurrent(global_I_S_noW, global_W,
-			global_dibl, V_DD, global_V_T0, global_n, global_phi); 
-		(*i)->switching_energy = 1; // TODO: Calculate
-
-		// Total leakage & switching
-		total_leakage += (*i)->leakage_energy;
-		total_switching += (*i)->switching_energy;
 	}
 
-	// Iterate
+	// Iterate and allow for delay values to propagate through paths
 	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
 		// Get longest delay (inputs+gate)
 		for (list<Node*>::iterator j = (*i)->inputs.begin(); j != (*i)->inputs.end(); j++) {
@@ -212,6 +207,21 @@ void Circuit::analyze() {
 		if ((*i)->delay_so_far >= (*i)->threshold)
 			(*i)->is_critical = true;
 	}
+
+	// Set clock period of circuit as critical delay
+	T_clk = critical_delay;
+
+	// Calculate leakage and switching energy
+	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
+		// Calculate for each gate
+		(*i)->leakage_energy = T_clk*V_DD*markovicLeakageCurrent(global_I_S_noW, global_W,
+			global_dibl, V_DD, global_V_T0, global_n, global_phi); 
+		(*i)->switching_energy = 1; // TODO: Calculate
+
+		// Total leakage & switching
+		total_leakage += (*i)->leakage_energy;
+		total_switching += (*i)->switching_energy;
+	}
 }
 
 void Circuit::non_trans_fanin() {
@@ -240,6 +250,29 @@ void Circuit::non_trans_fanin() {
 			*mask = 0;
 			mask_i = 0;
 		}
+	}
+}
+
+void Circuit::find_ideal_energy() {
+	double Vth_new = 0;
+	double leakage_energy_new = 0;
+
+	ideal_leakage_energy = 0;
+	// BELIEF: New Vth will always be greater than global Vth and so ideal
+	//         will always be less than circuit's actual leakage energy
+
+	// Iterate through gate nodes
+	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
+		// If gate is non-critical:
+		//	--> find "aged" Vth and calculate gate's resulting leakage energy
+		//  --> add new leakage energy to ideal_energy
+		if (!(*i)->is_critical) {
+			// Assume switching duty cycle of 0.5 for these gates
+			Vth_new = global_V_T0 + wangDeltaV_th(WANG_B, 0.5, NBTI_time);
+			leakage_energy_new = T_clk*V_DD*markovicLeakageCurrent(global_I_S_noW, global_W,
+				global_dibl, V_DD, Vth_new, global_n, global_phi);
+			ideal_leakage_energy += leakage_energy_new;
+		}	
 	}
 }
 
