@@ -12,25 +12,38 @@
 #include "InputPair.h"
 using namespace std;
 
+void run(char* file);
+
 int main(int argc, char* argv[]) {
 	// Check for command-line arguments
-	if (argc != 2) {
-		cout << "Usage: "
-			 << argv[0] << ": "
-			 << "<benchmark_circuit> "
-			 //<< "<delay_threshold> "
-			 //<< "<stdev> "
-			 //<< "<seed>"
-			 << endl;
-		return 1;
+	switch (argc) {
+		case 1:
+
+			break;
+		case 2:
+			run(argv[1]);
+			break;
+		default:
+			cout << "Usage: "
+				 << argv[0] << ": "
+				 << "<benchmark_circuit> "
+				 //<< "<delay_threshold> "
+				 //<< "<stdev> "
+				 //<< "<seed>"
+				 << endl;
+			return 1;
+			break;
 	}
 	//double delay_threshold = atof(argv[2]);		// threshold for finding epsilon-critical paths
 	//double stdev = atof(argv[4]);				// standard deviation of process variation
 	//srand(atoi(argv[5]));						// random number generator for process variability
+	return 0;
+}
 
+void run(char* file) {
 	// Parse and analyze
 	Circuit circuit;
-	circuit.parse(argv[1]);
+	circuit.parse(file);
 	circuit.analyze();
 	circuit.crit_fanin_noncrit_fanout();
 	circuit.find_ideal_energy();
@@ -124,6 +137,4 @@ int main(int argc, char* argv[]) {
 		(*i)->print_stats();
 	for (list<Node*>::iterator i = circuit.net_outputs.begin(); i != circuit.net_outputs.end(); i++)
 		(*i)->print_stats();
-
-	return 0;
 }
