@@ -254,10 +254,9 @@ void Circuit::non_trans_fanin() {
 }
 
 void Circuit::find_ideal_energy() {
-	double Vth_new = 0;
-	double leakage_energy_new = 0;
+	// Calculate ideal leakage energy based on total leakage energy
+	ideal_leakage_energy = total_leakage;
 
-	ideal_leakage_energy = 0;
 	// BELIEF: New Vth will always be greater than global Vth and so ideal
 	//         will always be less than circuit's actual leakage energy
 
@@ -268,10 +267,13 @@ void Circuit::find_ideal_energy() {
 		//  --> add new leakage energy to ideal_energy
 		if (!(*i)->is_critical) {
 			// Assume switching duty cycle of 0.5 for these gates
-			Vth_new = global_V_T0 + wangDeltaV_th(WANG_B, 0.5, NBTI_time);
-			leakage_energy_new = T_clk*V_DD*markovicLeakageCurrent(global_I_S_noW, global_W,
+			double Vth_new = global_V_T0 + wangDeltaV_th(WANG_B, 0.5, NBTI_time);
+			double leakage_energy_new = T_clk*V_DD*markovicLeakageCurrent(global_I_S_noW, global_W,
 				global_dibl, V_DD, Vth_new, global_n, global_phi);
-			ideal_leakage_energy += leakage_energy_new;
+
+			// Subtract old leakage and add new
+			total_leakage -= (*i)->leakage_energy;
+			total_leakage += leakage_energy_new;
 		}	
 	}
 }
