@@ -41,6 +41,6 @@ markovicLeakageCurrent(double IS_noW, double W, double dibl, double vdd, double 
 
 double 
 wangDeltaV_th(double b, double alpha, double t){
-	return b*pow(alpha, 6)*pow(t, 6);
+	return b*powl(alpha, 1.0/6.0)*pow(t, 1.0/6.0);
 }
 
