@@ -72,4 +72,8 @@ public:
 	// Inputs
 	bool output1;
 	bool output2;
+
+	// Set cover
+	bool reachable;
+	bool covered;
 };

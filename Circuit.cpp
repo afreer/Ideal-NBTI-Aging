@@ -160,11 +160,11 @@ void Circuit::analyze() {
 		}
 
 		// Calculate delay, leakage, switching
-		(*i)->delay = markovicDelay(global_K_d, V_DD,
-			calcIC(global_dibl, V_DD, global_V_T0,
-			global_n, global_phi), global_y, global_W,
-			global_W);
-		cout << (*i)->delay << endl;
+		//(*i)->delay = markovicDelay(global_K_d, V_DD,
+		//	calcIC(global_dibl, V_DD, global_V_T0,
+		//	global_n, global_phi), global_y, global_W,
+		//	global_W); 
+		(*i)->delay = 1; // FUTURE: real circuit
 	}
 
 	// Iterate and allow for delay values to propagate through paths
@@ -216,9 +216,10 @@ void Circuit::analyze() {
 	// Calculate leakage and switching energy
 	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
 		// Calculate for each gate
-		(*i)->leakage_energy = T_clk*V_DD*markovicLeakageCurrent(global_I_S_noW, global_W,
-			global_dibl, V_DD, global_V_T0, global_n, global_phi); 
-		(*i)->switching_energy = 1; // TODO: Calculate
+		//(*i)->leakage_energy = T_clk*V_DD*markovicLeakageCurrent(global_I_S_noW, global_W,
+		//	global_dibl, V_DD, global_V_T0, global_n, global_phi); 
+		(*i)->leakage_energy = 1; // TODO: real circuit
+		(*i)->switching_energy = 1; // TODO: real circuit
 
 		// Total leakage & switching
 		total_leakage += (*i)->leakage_energy;
@@ -276,9 +277,10 @@ void Circuit::find_ideal_energy() {
 		//  --> add new leakage energy to ideal_energy
 		if (!(*i)->is_critical) {
 			// Assume switching duty cycle of 0.5 for these gates
-			double Vth_new = global_V_T0 + wangDeltaV_th(WANG_B, 0.5, NBTI_time);
-			double leakage_energy_new = T_clk*V_DD*markovicLeakageCurrent(global_I_S_noW, global_W,
-				global_dibl, V_DD, Vth_new, global_n, global_phi);
+			//double Vth_new = global_V_T0 + wangDeltaV_th(WANG_B, 0.5, NBTI_time);
+			//double leakage_energy_new = T_clk*V_DD*markovicLeakageCurrent(global_I_S_noW, global_W,
+			//	global_dibl, V_DD, Vth_new, global_n, global_phi);
+			double leakage_energy_new = 0; // FUTURE: real circuit
 
 			// Subtract old leakage and add new
 			ideal_leakage_energy -= (*i)->leakage_energy;
@@ -288,7 +290,7 @@ void Circuit::find_ideal_energy() {
 }
 
 // Print critical delay, total leakage, ideal leakage
-void Circuit::printStats() {
+void Circuit::print_stats() {
 	cout << "Critical delay: " << critical_delay 
 		<< "\nLeakage energy: " << total_leakage
 		<< "\nIdeal leakage energy: " << ideal_leakage_energy
@@ -310,9 +312,10 @@ bool Circuit::apply_input_pair() {
 			}
 
 			// Calc new leakage energy
-			double Vth_new = global_V_T0 + wangDeltaV_th(WANG_B, 0.5, NBTI_time);
-			double leakage_energy_new = T_clk*V_DD*markovicLeakageCurrent(global_I_S_noW, global_W,
-				global_dibl, V_DD, Vth_new, global_n, global_phi);
+			//double Vth_new = global_V_T0 + wangDeltaV_th(WANG_B, 0.5, NBTI_time);
+			//double leakage_energy_new = T_clk*V_DD*markovicLeakageCurrent(global_I_S_noW, global_W,
+			//	global_dibl, V_DD, Vth_new, global_n, global_phi);
+			double leakage_energy_new = 0; // FUTURE: real circuit
 
 			// Subtract old leakage and add new
 			last_leakage_energy -= (*i)->leakage_energy;

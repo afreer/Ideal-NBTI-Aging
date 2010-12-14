@@ -1,9 +1,11 @@
 #include <fstream>
 #include <iostream>
 #include <list>
+#include <set>
 #include <map>
 #include <string>
 #include <cmath>
+#include <cassert>
 #include "Node.h" 
 #include "Math.h"
 #include "Circuit.h"
@@ -32,10 +34,10 @@ int main(int argc, char* argv[]) {
 	circuit.analyze();
 	circuit.find_ideal_energy();
 	circuit.non_trans_fanin();
-	circuit.printStats();
+	circuit.print_stats();
 
 	// Try vectors
-	list<InputPair*> pairs;
+	multiset<InputPair*> pairs;
 	int maxtries = 0; // TODO: input
 	for (int guess = 0; guess < maxtries; guess++) {
 		// Generate vector inputs
@@ -74,10 +76,28 @@ int main(int argc, char* argv[]) {
 		pair->input1 = input1;
 		pair->input2 = input2;
 		pair->leakage_energy = circuit.last_leakage_energy;
-		pairs.push_front(pair);
+		pair->remaining = pair->leakage_energy;
+		pair->visited = 0;
+		pairs.insert(pair);
 	}
 
-	// Convex programming
+	// Hamming distance on top vectors
+
+	// Greedy (set cover)
+	//int visited = 0;
+	//list<InputPair*> greedy;
+	//multiset<InputPair*>::iterator i = pairs.begin();
+	//while (i != pairs.end()) {
+	//	InputPair* temp = *i;
+	//	if ((*i)->visited == visited) {
+	//		greedy.push_back(temp);
+	//		i = pairs.erase(i);
+	//	}
+	//}
+	
+	// Linear programming (set cover)
+
+	// Convex programming (true optimality)
 
 	// Output for testing...
 	for (list<Node*>::iterator i = circuit.net_inputs.begin(); i != circuit.net_inputs.end(); i++)

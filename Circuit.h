@@ -6,17 +6,14 @@ using namespace std;
 class Circuit
 {
 public:
-	// >>> CIRCUIT FUNCTIONS <<<
 	Circuit(void);
 	~Circuit(void);
 	void parse(char *file);
 	void analyze();
-	void printStats();
+	void print_stats();
 	void non_trans_fanin();
 	void find_ideal_energy();
 	bool apply_input_pair(); 
-
-	// >>> CIRCUIT VARIABLES <<<
 
 	// Total ideal leakage energy
 	double ideal_leakage_energy;
@@ -25,19 +22,15 @@ public:
 	int *freeze_mask;
 	int freeze_mask_len;
 
-	// All inputs
-	list<Node*> net_inputs;
-
-	// All outputs
-	list<Node*> net_outputs;
-
-	// All gates (not inputs/outputs)
+	// Inputs, outputs, gates (not inputs/outputs)
 	// BELIEF: assume net_gates is in order evaluatable.
 	//  --> e.g. net_gates[i]'s inputs come before net_gate[i].
 	//  --> This is currently enforced by the parser.
+	list<Node*> net_inputs;
+	list<Node*> net_outputs;
 	list<Node*> net_gates;
 
-	// Original totals
+	// Original totals (see analyze())
 	double total_leakage;
 	double total_switching;
 	double critical_delay;
@@ -48,7 +41,6 @@ public:
 	// Input parameters
 	double V_DD;
 	double T_clk;
-	double aging_time;
 
 	// Amount of time for aging via NBTI degradation
 	double NBTI_time;
