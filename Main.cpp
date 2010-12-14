@@ -32,42 +32,44 @@ int main(int argc, char* argv[]) {
 	Circuit circuit;
 	circuit.parse(argv[1]);
 	circuit.analyze();
-	circuit.non_trans_fanin();
+	circuit.crit_fanin_noncrit_fanout();
 	circuit.find_ideal_energy();
 	circuit.print_stats();
 
 	// Try vectors
 	multiset<InputPair*> pairs;
-	int maxtries = 0; // TODO: input
-	for (int guess = 0; guess < maxtries; guess++) {
-		// Generate vector inputs
-		int *input1 = new int[circuit.freeze_mask_len];
-		int *input2 = new int[circuit.freeze_mask_len];
-		for (int j = 0; j < circuit.freeze_mask_len; j++) {
-			input1[j] = rand();
-			input2[j] = rand();
+	if (circuit.ideal_leakage_saved_trans > 0) {
+		int maxtries = 1; // TODO: input
+		for (int guess = 0; guess < maxtries; guess++) {
+			// Generate vector inputs
+			int *input1 = new int[circuit.freeze_mask_len];
+			int *input2 = new int[circuit.freeze_mask_len];
+			for (int j = 0; j < circuit.freeze_mask_len; j++) {
+				input1[j] = rand();
+				input2[j] = rand();
+			}
+
+			// Transitive fanin freeze
+			for (int i = 0; i < circuit.freeze_mask_len; i++) {
+				input2[i] = (input2[i]&(~circuit.freeze_mask[i])) |
+					(input1[i]&circuit.freeze_mask[i]);
+			}
+
+			// Create InputPair
+			InputPair *pair = new InputPair;
+			pair->input1 = input1;
+			pair->input2 = input2;
+
+			// Find new leakage energy and record
+			if (circuit.apply_input_pair(pair)) 
+				assert(false); // For now, never affect critical
+
+			// Add input pair to list
+			pair->saved_orig = circuit.leakage_saved_last;
+			pair->saved_last = pair->saved_orig;
+			pair->visited = 0;
+			pairs.insert(pair);
 		}
-
-		// Transitive fanin freeze
-		for (int i = 0; i < circuit.freeze_mask_len; i++) {
-			input2[i] = (input2[i]&circuit.freeze_mask[i]) |
-				(input1[i]&circuit.freeze_mask[i]);
-		}
-
-		// Create InputPair
-		InputPair *pair = new InputPair;
-		pair->input1 = input1;
-		pair->input2 = input2;
-
-		// Find new leakage energy and record
-		if (circuit.apply_input_pair(pair)) 
-			assert(false); // For now, never affect critical
-
-		// Add input pair to list
-		pair->saved_orig = circuit.leakage_saved_last;
-		pair->saved_last = pair->saved_orig;
-		pair->visited = 0;
-		pairs.insert(pair);
 	}
 
 	// Hamming distance on top vectors
@@ -106,6 +108,10 @@ int main(int argc, char* argv[]) {
 			}
 		}
 	}
+	circuit.countCovered();
+	cout << "Greedy: Covered = " << circuit.covered_count 
+		<< " Vectors = " << greedy.size()
+		<< endl;
 	
 	// Linear programming (set cover)
 

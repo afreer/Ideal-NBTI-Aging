@@ -230,30 +230,49 @@ void Circuit::analyze() {
 
 // Find input nodes that are not part of transitive
 //  fan-in of any critical gate
-void Circuit::non_trans_fanin() {
+void Circuit::crit_fanin_noncrit_fanout() {
 	// Iterate in reverse through gate nodes to mark transitive inputs
 	for (list<Node*>::reverse_iterator i = net_gates.rbegin(); i != net_gates.rend(); i++) {
 		// If gate is critical or transitive:
 		//	--> iterate through its inputs & mark them as transitive
-		if ((*i)->is_critical || (*i)->is_transitive) {
-			(*i)->is_transitive = true;
+		if ((*i)->is_critical || (*i)->crit_trans_fanin) {
+			(*i)->crit_trans_fanin = true;
 			for (list<Node*>::iterator j = (*i)->inputs.begin(); j != (*i)->inputs.end(); j++) {
-				(*j)->is_transitive = true;
+				(*j)->crit_trans_fanin = true;
 			}
 		}
 	}
 
+	// Transitive fanout (inputs)
+	for (list<Node*>::iterator i = net_inputs.begin(); i != net_inputs.end(); i++) {
+		if (!(*i)->crit_trans_fanin) {
+			(*i)->noncrit_trans_fanout = true;
+			for (list<Node*>::iterator j = (*i)->outputs.begin(); j != (*i)->outputs.end(); j++) {
+				(*j)->noncrit_trans_fanout = true;
+			}
+		}
+	}
+
+	// Transitive fanout (gates)
+	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
+		if ((*i)->noncrit_trans_fanout) {
+			for (list<Node*>::iterator j = (*i)->outputs.begin(); j != (*i)->outputs.end(); j++) {
+				(*j)->noncrit_trans_fanout = true;
+			}
+		}
+	}
+	
 	// Generate freeze mask
-	freeze_mask_len = ((int)net_inputs.size()-1)/32;
+	freeze_mask_len = (((int)net_inputs.size()-1)/32)+1;
 	freeze_mask = new int[freeze_mask_len];
 	int *mask = freeze_mask;
 	int mask_i = 0;
 	*mask = 0;
 	for (list<Node*>::iterator i = net_inputs.begin(); i != net_inputs.end(); i++) {
-		if ((*i)->is_transitive) 
+		if ((*i)->crit_trans_fanin) 
 			*mask |= 1 << mask_i;
 		mask_i++;
-		if (mask_i > 32) {
+		if (mask_i >= 32) {
 			mask++;
 			*mask = 0;
 			mask_i = 0;
@@ -288,7 +307,7 @@ void Circuit::find_ideal_energy() {
 			// Subtract old leakage and add new
 			ideal_leakage_saved += (*i)->leakage_energy;
 			ideal_leakage_saved -= leakage_energy_new;
-			if (!(*i)->is_transitive) {
+			if ((*i)->noncrit_trans_fanout) {
 				ideal_leakage_saved_trans += (*i)->leakage_energy;
 				ideal_leakage_saved_trans -= leakage_energy_new;
 			}
@@ -302,7 +321,14 @@ void Circuit::print_stats() {
 		<< "\nLeakage energy: " << leakage_energy
 		<< "\nIdeal saved leakage energy: " << ideal_leakage_saved
 		<< "\nIdeal saved transitive leakage energy: " << ideal_leakage_saved_trans 
-		<< endl;
+		<< "\nInputs=" << net_inputs.size()
+		<< ", Gates=" << net_gates.size() 
+		<< ", Outputs=" << net_outputs.size()
+		<< "\nTrans. Mask = ";
+	for (int i = 0; i < freeze_mask_len; i++) {
+		printf("%08x ", freeze_mask[i]);
+	}
+	cout << endl;
 }
 
 // Apply input pair.  Calculate the new leakage energy.
@@ -343,6 +369,14 @@ bool Circuit::covered() {
 			return false;
 	}
 	return true;
+}
+
+void Circuit::countCovered() {
+	covered_count = 0;
+	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
+		if ((*i)->covered)
+			covered_count++;
+	}
 }
 
 // Apply input pair to just the inputs

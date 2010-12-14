@@ -15,8 +15,11 @@ Node::Node(void)
 	delay_so_far = 0;
 	delay = 0;
 	is_critical = false;
-	is_transitive = false;
+	crit_trans_fanin = false;
+	noncrit_trans_fanout = false;
 	threshold = numeric_limits<double>::infinity();
+	reachable = false;
+	covered = false;
 }
 
 Node::~Node(void)
@@ -48,7 +51,7 @@ void Node::print_stats() {
 		<< ", Delay_so_far: " << delay_so_far
 		<< ", Threshold: " << threshold
 		<< ", Is_critical " << is_critical
-		<< ", Is_transitive " << is_transitive
+		<< ", crit_trans_fanin " << crit_trans_fanin
 		<< endl;
 }
 

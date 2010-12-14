@@ -12,12 +12,13 @@ public:
 	void parse(char *file);
 	void analyze();
 	void print_stats();
-	void non_trans_fanin();
+	void crit_fanin_noncrit_fanout();
 	void find_ideal_energy();
 	void apply_input_pair_to_inputs(InputPair *pair);
 	bool apply_input_pair(InputPair *pair); 
 	void cover(InputPair *pair);
 	bool covered();
+	void countCovered();
 
 	// Inputs, outputs, gates (not inputs/outputs)
 	// BELIEF: assume net_gates is in order evaluatable.
@@ -42,6 +43,9 @@ public:
 	double ideal_leakage_saved;
 	double ideal_leakage_saved_trans;
 	double leakage_saved_last;
+
+	// Cover set
+	int covered_count;
 
 	//////////////////////////////////////////////////////////////////////
 	// MODELING (FUTURE)

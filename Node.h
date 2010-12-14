@@ -57,8 +57,10 @@ public:
 	double delay;
 	//  --> True if this gate is a critical gate
 	bool is_critical;
-	//  --> True if this is transitive fan-in of critical gate
-	bool is_transitive;
+
+	// Fanin/Fanout
+	bool crit_trans_fanin;
+	bool noncrit_trans_fanout;
 
 	// Leakage calculations
 	double leakage_energy;
