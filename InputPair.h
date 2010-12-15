@@ -8,6 +8,6 @@ public:
 	int visited;
 
 	bool operator < (const InputPair& refParam) const {
-		return saved_last < refParam.saved_last;
+		return saved_last > refParam.saved_last;
 	}
 };

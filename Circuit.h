@@ -20,6 +20,8 @@ public:
 	bool covered();
 	void countCovered();
 	void reset_covered();
+	void reset_reachable();
+	int nonfreeze_reachable_reached();
 
 	// Inputs, outputs, gates (not inputs/outputs)
 	// BELIEF: assume net_gates is in order evaluatable.

@@ -337,7 +337,6 @@ void Circuit::print_stats() {
 bool Circuit::apply_input_pair(InputPair *pair) {
 	// Propagate through gates
 	apply_input_pair_to_inputs(pair);
-	bool ret = false;
 	leakage_saved_last = 0;
 	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
 		// Calculate node output
@@ -345,8 +344,7 @@ bool Circuit::apply_input_pair(InputPair *pair) {
 		if ((*i)->output1 != (*i)->output2) {
 			// Switched
 			if ((*i)->is_critical)
-				ret = true;
-			(*i)->reachable = true;
+				return true;
 
 			// Calc new leakage energy
 			//double Vth_new = global_V_T0 + wangDeltaV_th(WANG_B, 0.5, NBTI_time);
@@ -359,7 +357,15 @@ bool Circuit::apply_input_pair(InputPair *pair) {
 			leakage_saved_last -= leakage_energy_new;
 		}
 	}
-	return ret;
+
+	// If no critical gates were switched, mark switched gates as reachable
+	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
+		if ((*i)->output1 != (*i)->output2) {
+			(*i)->reachable = true;
+		}
+	}
+	
+	return false;
 }
 
 // Return true if some gates are not covered
@@ -413,4 +419,22 @@ void Circuit::reset_covered() {
 	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
 		(*i)->covered = false;
 	}
+}
+
+// Reset all gates covered/reachable status
+void Circuit::reset_reachable() {
+	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
+		(*i)->reachable = false;
+	}
+}
+
+// Count all reachable gates that could not be reached via 
+//  transitive fanin freeze.
+int Circuit::nonfreeze_reachable_reached() {
+	int count = 0;
+	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
+		if ((*i)->reachable && !(*i)->noncrit_trans_fanout)
+			count++;
+	}
+	return count;
 }
