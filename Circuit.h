@@ -19,6 +19,7 @@ public:
 	void cover(InputPair *pair);
 	bool covered();
 	void countCovered();
+	void reset_covered();
 
 	// Inputs, outputs, gates (not inputs/outputs)
 	// BELIEF: assume net_gates is in order evaluatable.

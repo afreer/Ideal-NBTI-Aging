@@ -44,10 +44,6 @@ public:
 	list<Node*> inputs;
 	list<Node*> outputs;
 
-	// Gate characteristics
-	double L;
-	double W;
-
 	// Delay calculations
 	//  --> Delay at output of this gate
 	double delay_so_far;
@@ -62,15 +58,6 @@ public:
 	bool crit_trans_fanin;
 	bool noncrit_trans_fanout;
 
-	// Leakage calculations
-	double leakage_energy;
-
-	// Switching calculations (should not need this per gate)
-	double switching_energy;
-
-	// Visited (implemented as counter...increment and compare)
-	int visited;
-
 	// Inputs
 	bool output1;
 	bool output2;
@@ -78,4 +65,20 @@ public:
 	// Set cover
 	bool reachable;
 	bool covered;
+
+	// Visited (implemented as counter...increment and compare)
+	int visited;
+
+	//////////////////////////////////////////////////////////////////////
+	// Gate characteristics
+	//////////////////////////////////////////////////////////////////////
+
+	double L;
+	double W;
+
+	// Leakage calculations
+	double leakage_energy;
+
+	// Switching calculations (should not need this per gate)
+	double switching_energy;
 };

@@ -18,10 +18,11 @@ int main(int argc, char* argv[]) {
 	// Check for command-line arguments
 	switch (argc) {
 		case 1:
+			run("benchmarks/c2670.txt");
+
 			run("benchmarks/c1355.txt");
 			run("benchmarks/c17.txt");
 			run("benchmarks/c1908.txt");
-			run("benchmarks/c2670.txt");
 			run("benchmarks/c3540.txt");
 			run("benchmarks/c432.txt");
 			run("benchmarks/c5315.txt");
@@ -63,84 +64,104 @@ void run(char* file) {
 
 	// Try vectors
 	multiset<InputPair*> pairs;
+	const int maxtries = 500;
 	if (circuit.ideal_leakage_saved_trans > 0) {
-		int maxtries = 1000; // TODO: input
-		for (int guess = 0; guess < maxtries; guess++) {
-			// Generate vector inputs
-			int *input1 = new int[circuit.freeze_mask_len];
-			int *input2 = new int[circuit.freeze_mask_len];
-			for (int j = 0; j < circuit.freeze_mask_len; j++) {
-				input1[j] = rand();
-				input2[j] = rand();
+
+		for (int iterations = 0; iterations < 10; iterations++) {
+			// Initialize circuit
+			circuit.reset_covered();
+
+			// Guess
+			for (int guess = 0; guess < maxtries; guess++) {
+				// Generate vector inputs
+				int *input1 = new int[circuit.freeze_mask_len];
+				int *input2 = new int[circuit.freeze_mask_len];
+				for (int j = 0; j < circuit.freeze_mask_len; j++) {
+					input1[j] = rand();
+					input2[j] = rand();
+				}
+
+				// Transitive fanin freeze
+				for (int i = 0; i < circuit.freeze_mask_len; i++) {
+					input2[i] = (input2[i]&(~circuit.freeze_mask[i])) |
+						(input1[i]&circuit.freeze_mask[i]);
+				}
+
+				// Create InputPair
+				InputPair *pair = new InputPair;
+				pair->input1 = input1;
+				pair->input2 = input2;
+
+				// Find new leakage energy and record
+				if (circuit.apply_input_pair(pair)) 
+					assert(false); // For now, never affect critical
+
+				// Add input pair to list
+				pair->saved_orig = circuit.leakage_saved_last;
+				pair->saved_last = pair->saved_orig;
+				pair->visited = 0;
+				pairs.insert(pair);
 			}
 
-			// Transitive fanin freeze
-			for (int i = 0; i < circuit.freeze_mask_len; i++) {
-				input2[i] = (input2[i]&(~circuit.freeze_mask[i])) |
-					(input1[i]&circuit.freeze_mask[i]);
+			// Greedy (set cover)
+			int visited = 0;
+			list<InputPair*> greedy;
+			multiset<InputPair*>::iterator i = pairs.begin();
+			while (!circuit.covered()) {
+				while (true) {
+					// Check if we have already visited this input pair
+					multiset<InputPair*>::iterator temp = i;
+					i++;
+					if ((*temp)->visited == visited) {
+						// Maximum, so add to greedy
+						circuit.cover(*temp);
+						greedy.push_back(*temp);
+						break; // Check if everything is covered
+					} else {
+						// Recalculate
+						circuit.apply_input_pair(*temp);
+						(*temp)->saved_last = circuit.leakage_saved_last;
+						(*temp)->visited = visited;
+
+						// Check if this is still the maximum
+						pairs.erase(temp);
+						if (i == pairs.end() || (*temp)->saved_last >= (*i)->saved_last) {
+							// Still the maximum, so add to greedy
+							circuit.cover(*temp);
+							greedy.push_back(*temp);
+							break; // Check if everything is covered
+						} else {
+							// Reinsert (sorted)
+							pairs.insert(*temp);
+						}
+					}
+					
+					// Increment visited
+					visited++;
+				}
 			}
 
-			// Create InputPair
-			InputPair *pair = new InputPair;
-			pair->input1 = input1;
-			pair->input2 = input2;
-
-			// Find new leakage energy and record
-			if (circuit.apply_input_pair(pair)) 
-				assert(false); // For now, never affect critical
-
-			// Add input pair to list
-			pair->saved_orig = circuit.leakage_saved_last;
-			pair->saved_last = pair->saved_orig;
-			pair->visited = 0;
-			pairs.insert(pair);
-		}
-	}
-
-	// Hamming distance on top vectors
-
-	// Greedy (set cover)
-	int visited = 0;
-	list<InputPair*> greedy;
-	multiset<InputPair*>::iterator i = pairs.begin();
-	while (!circuit.covered()) {
-		while (i != pairs.end()) {
-			multiset<InputPair*>::iterator temp = i;
-			
-			// Check if we have already visited this input pair
-			if ((*i)->visited == visited) {
-				// Maximum, so add to greedy
-				circuit.cover(*temp);
-				greedy.push_back(*temp);
-				i = pairs.erase(temp);
-			} else {
-				// Recalculate
-				circuit.apply_input_pair(*temp);
-				(*temp)->saved_last = circuit.leakage_saved_last;
-				(*temp)->visited = visited;
-
-				// Check if this is still the maximum
-				i++;
-				i = pairs.erase(temp);
-				if ((*temp)->saved_last >= (*i)->saved_last) {
-					// Still the maximum, so add to greedy
-					circuit.cover(*temp);
-					greedy.push_back(*temp);
-				} else {
-					// Reinsert (sorted)
+			// Print stats
+			circuit.countCovered();
+			cout << "Greedy (" << maxtries*(iterations+1) << "): Covered = " 
+				<< circuit.covered_count 
+				<< " Vectors = " << greedy.size()
+				<< endl;
+		
+			// Reset/resuse input pairs
+			for (multiset<InputPair*>::iterator i = pairs.begin(); i != pairs.end();) {
+				if ((*i)->visited != 0) {
+					multiset<InputPair*>::iterator temp = i;
+					(*temp)->saved_last = (*temp)->saved_orig;
+					(*temp)->visited = 0;
+					i = pairs.erase(temp);
 					pairs.insert(*temp);
+				} else {
+					i++;
 				}
 			}
 		}
 	}
-	circuit.countCovered();
-	cout << "Greedy: Covered = " << circuit.covered_count 
-		<< " Vectors = " << greedy.size()
-		<< endl;
-	
-	// Linear programming (set cover)
-
-	// Convex programming (true optimality)
 
 	// Output for testing...
 	//for (list<Node*>::iterator i = circuit.net_inputs.begin(); i != circuit.net_inputs.end(); i++)

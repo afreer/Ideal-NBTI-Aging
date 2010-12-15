@@ -407,3 +407,10 @@ void Circuit::cover(InputPair *pair) {
 		}
 	}
 }
+
+// Reset all gates covered/reachable status
+void Circuit::reset_covered() {
+	for (list<Node*>::iterator i = net_gates.begin(); i != net_gates.end(); i++) {
+		(*i)->covered = false;
+	}
+}
