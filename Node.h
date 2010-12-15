@@ -18,7 +18,7 @@ enum NodeType {
 
 const static char* NODE_TYPE_STRINGS[] = {
 	"INPUT",
-	"OUTPUT",
+	"OUTPUT", 
 	"BUFF",
 	"NOT",
 	"AND",

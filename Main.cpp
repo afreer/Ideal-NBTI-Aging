@@ -18,7 +18,16 @@ int main(int argc, char* argv[]) {
 	// Check for command-line arguments
 	switch (argc) {
 		case 1:
-
+			run("benchmarks/c1355.txt");
+			run("benchmarks/c17.txt");
+			run("benchmarks/c1908.txt");
+			run("benchmarks/c2670.txt");
+			run("benchmarks/c3540.txt");
+			run("benchmarks/c432.txt");
+			run("benchmarks/c5315.txt");
+			run("benchmarks/c6288.txt");
+			run("benchmarks/c7552.txt");
+			run("benchmarks/c880.txt");
 			break;
 		case 2:
 			run(argv[1]);
@@ -41,6 +50,9 @@ int main(int argc, char* argv[]) {
 }
 
 void run(char* file) {
+	// Print name of file
+	cout << file << endl;
+
 	// Parse and analyze
 	Circuit circuit;
 	circuit.parse(file);
@@ -52,7 +64,7 @@ void run(char* file) {
 	// Try vectors
 	multiset<InputPair*> pairs;
 	if (circuit.ideal_leakage_saved_trans > 0) {
-		int maxtries = 1; // TODO: input
+		int maxtries = 1000; // TODO: input
 		for (int guess = 0; guess < maxtries; guess++) {
 			// Generate vector inputs
 			int *input1 = new int[circuit.freeze_mask_len];
@@ -131,10 +143,13 @@ void run(char* file) {
 	// Convex programming (true optimality)
 
 	// Output for testing...
-	for (list<Node*>::iterator i = circuit.net_inputs.begin(); i != circuit.net_inputs.end(); i++)
-		(*i)->print_stats();
-	for (list<Node*>::iterator i = circuit.net_gates.begin(); i != circuit.net_gates.end(); i++)
-		(*i)->print_stats();
-	for (list<Node*>::iterator i = circuit.net_outputs.begin(); i != circuit.net_outputs.end(); i++)
-		(*i)->print_stats();
+	//for (list<Node*>::iterator i = circuit.net_inputs.begin(); i != circuit.net_inputs.end(); i++)
+	//	(*i)->print_stats();
+	//for (list<Node*>::iterator i = circuit.net_gates.begin(); i != circuit.net_gates.end(); i++)
+	//	(*i)->print_stats();
+	//for (list<Node*>::iterator i = circuit.net_outputs.begin(); i != circuit.net_outputs.end(); i++)
+	//	(*i)->print_stats();
+
+	// Clean line
+	cout << endl;
 }
